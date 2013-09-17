@@ -3,13 +3,12 @@
  * Class representing extension 'Loops', containing all parser functions and other
  * extension logic stuff.
  * 
- * @since 0.5
- * @file Loops.body.php
- * @ingroup Loops
- * @author Daniel Werner < danweetz@web.de >, Noah Manneschmidt < nmanneschmidt@curse.com >
+ * @since	0.5
+ * @file	Loops.body.php
+ * @ingroup	Loops
+ * @author	Daniel Werner < danweetz@web.de >, Noah Manneschmidt < nmanneschmidt@curse.com >
  */
 class ExtLoops {
-		
 	const VERSION = '0.5';
 	
 	/**
@@ -21,7 +20,7 @@ class ExtLoops {
 	public static $maxLoops = 100;
 
 	/**
-	 * Returns the extensions base installation directory.
+	 * Returns the extensions base installation directory. No longer used.
 	 *
 	 * @since 0.4
 	 * @deprecated
@@ -37,12 +36,14 @@ class ExtLoops {
 	}
 
 	/**
-	* Sets up parser functions
-	* 
-	* @since 0.4
+	 * Sets up parser functions
+	 *
+	 * @since	0.4
+	 * @access	public
+	 * @param	Parser		Parser object
+	 * @return	boolean		success
 	*/
 	public static function init( Parser &$parser ) {
-		
 		if( ! class_exists( 'ExtVariables' ) ) {
 			/*
 			 * If Variables extension not defined, we can't use certain functions.
@@ -52,7 +53,7 @@ class ExtLoops {
 			$disabledFunctions = array( 'loop', 'forargs', 'fornumargs' );
 			$egLoopsEnabledFunctions = array_diff( $egLoopsEnabledFunctions, $disabledFunctions );
 		}
-		
+
 		/*
 		 * store for loops count per parser object. This will solve several bugs related to
 		 * 'ParserClearState' hook resetting the count early in combination with certain
@@ -65,9 +66,18 @@ class ExtLoops {
 		self::initFunction( $parser, 'loop' );
 		self::initFunction( $parser, 'forargs' );
 		self::initFunction( $parser, 'fornumargs' );
-		
+
 		return true;
 	}
+
+	/**
+	 * Registers one of the main loop fuction hooks
+	 *
+	 * @access	private
+	 * @param	Parser		parser object
+	 * @param	string		name of loop function to register
+	 * @return	void
+	 */
 	private static function initFunction( Parser &$parser, $name ) {
 		global $egLoopsEnabledFunctions;
 		
@@ -79,15 +89,16 @@ class ExtLoops {
 		$functionCallback = array( __CLASS__, 'parse' . ucfirst($name) );
 		$parser->setFunctionHook( $name, $functionCallback, SFH_OBJECT_ARGS );
 	}
-	
-	
-	####################
-	# Parser Functions #
-	####################
 
 	/**
 	 * #while condition | code
 	 * condition is checked each loop BEFORE running code
+	 *
+	 * @access	public
+	 * @param	Parser		Parser object
+	 * @param	PPFrame		PPFrame object
+	 * @param	array		array of arguments provided to the loop function
+	 * @return	string		the output of the looped code
 	 */
 	public static function parseWhile( Parser &$parser, $frame, $args ) {
 		return self::performWhile( $parser, $frame, $args, false );
@@ -96,6 +107,12 @@ class ExtLoops {
 	/**
 	 * #dowhile condition | code
 	 * condition is checked each loop AFTER running code
+	 *
+	 * @access	public
+	 * @param	Parser		Parser object
+	 * @param	PPFrame		PPFrame object
+	 * @param	array		array of arguments provided to the loop function
+	 * @return	string		the output of the looped code
 	 */
 	public static function parseDowhile( Parser &$parser, $frame, $args ) {
 		return self::performWhile( $parser, $frame, $args, true );
@@ -103,6 +120,12 @@ class ExtLoops {
 	
 	/**
 	 * #loop keyVarName | valVarName | numLoops | code
+	 *
+	 * @access	public
+	 * @param	Parser		Parser object
+	 * @param	PPFrame		PPFrame object
+	 * @param	array		array of arguments provided to the loop function
+	 * @return	string		the output of the looped code
 	 */
 	public static function parseLoop( Parser &$parser, PPFrame $frame, $args ) {
 		// #loop: var | start | count | code
@@ -139,6 +162,12 @@ class ExtLoops {
 	
 	/**
 	 * #forargs: filter | keyVarName | valVarName | code
+	 *
+	 * @access	public
+	 * @param	Parser		Parser object
+	 * @param	PPFrame		PPFrame object
+	 * @param	array		array of arguments provided to the loop function
+	 * @return	string		the output of the looped code
 	 */
 	public static function parseForargs( Parser &$parser, $frame, $args ) {
 		// The first arg is already expanded, but this is a good habit to have...
@@ -157,6 +186,12 @@ class ExtLoops {
 	 * #fornumargs: keyVarName | valVarName | code
 	 * or (since 0.4 for more consistency)
 	 * #fornumargs: | keyVarName | valVarName | code
+	 *
+	 * @access	public
+	 * @param	Parser		Parser object
+	 * @param	PPFrame		PPFrame object
+	 * @param	array		array of arguments provided to the loop function
+	 * @return	string		the output of the looped code
 	 */
 	public static function parseFornumargs( Parser &$parser, $frame, $args ) {
 		/*
@@ -183,6 +218,13 @@ class ExtLoops {
 	
 	/**
 	 * Generic function handling '#while' and '#dowhile' as one
+	 *
+	 * @access	protected
+	 * @param	Parser		Parser object
+	 * @param	PPFrame		PPFrame object
+	 * @param	array		array of arguments provided to the loop function
+	 * @param	boolean		if true, implement a dowhile (run block before checking expression)
+	 * @return	string		the output of the looped code
 	 */
 	protected static function performWhile( Parser &$parser, $frame, $args, $dowhile = false ) {
 		// #(do)while: | condition | code
@@ -213,6 +255,14 @@ class ExtLoops {
 	
 	/**
 	 * Generic function handling '#forargs' and '#fornumargs' as one
+	 *
+	 * @access	protected
+	 * @param	Parser		Parser object
+	 * @param	PPFrame		PPFrame object
+	 * @param	array		array of arguments provided to the loop function
+	 * @param	array		array of arguments provided to the template
+	 * @param	string		prefix to search for in provided arguments
+	 * @return	string		the output of the looped code
 	 */
 	protected static function performForargs( Parser &$parser, PPFrame $frame, array $funcArgs, array $templateArgs, $prefix = '' ) {
 		// if not called within template instance:
@@ -281,19 +331,14 @@ class ExtLoops {
 			$wgExtVariables->vardefine( $parser, trim( $varName ), trim( $varValue ) );
 		}
 	}
-	
-	
-	###############
-	# Loops Count #
-	###############
-	
+
 	/**
 	 * Returns how many loops have been performed for a given Parser instance.
 	 * 
 	 * @since 0.4
 	 * 
-	 * @param Parser $parser
-	 * @return int
+	 * @param	Parser		$parser
+	 * @return	int
 	 */
 	public static function getLoopsCount( Parser &$parser ) {
 		return $parser->mExtLoopsCounter;
@@ -305,8 +350,8 @@ class ExtLoops {
 	 * 
 	 * @since 0.4
 	 * 
-	 * @param Parser $parser
-	 * @return bool 
+	 * @param	Parser		$parser
+	 * @return	bool
 	 */
 	public static function maxLoopsPerformed( Parser &$parser ) {
 		$count = $parser->mExtLoopsCounter;
@@ -315,9 +360,11 @@ class ExtLoops {
 	
 	/**
 	 * If limit has not been exceeded already, this will increase the counter. If
-	 * exceeded false will be returned, otherwise the new counter value
+	 * exceeded false will be returned, otherwise the new counter value.
 	 * 
-	 * @return false|int
+	 * @access	protected
+	 * @param	Parser		reference to the parser object
+	 * @return	mixed		false if max has been reached, int count of loops if max not reached
 	 */
 	protected static function incrCounter( Parser &$parser ) {
 		if( self::maxLoopsPerformed( $parser ) ) {
@@ -325,9 +372,13 @@ class ExtLoops {
 		}
 		return ++$parser->mExtLoopsCounter;
 	}
-	
+
 	/**
 	 * div wrapped error message stating maximum number of loops have been performed.
+	 *
+	 * @access	protected
+	 * @param	string		The output of the loop
+	 * @return	string		The output followed by an error message
 	 */
 	protected static function msgLoopsLimit( $output = '' ) {
 		if( trim( $output ) !== '' ) {
@@ -335,18 +386,28 @@ class ExtLoops {
 		}
 		return $output .= '<div class="error">' . wfMsgForContent( 'loops_max' ) . '</div>';
 	}
-	
-	
-	##################
-	# Hooks handling #
-	##################
-	
+
+	/**
+	 * Resets the loop counter for the parser when the state is cleared.
+	 *
+	 * @access	public
+	 * @param	Parser		parser object
+	 * @return	boolean
+	 */
 	public static function onParserClearState( Parser &$parser ) {
 		// reset loops counter since the parser process finished one page
 		$parser->mExtLoopsCounter = 0;
 		return true;
 	}
-	
+
+	/**
+	 * Reports on how many loops were processed after parsing
+	 *
+	 * @access	public
+	 * @param	Parser		parser object
+	 * @param	string		text that will be included in the report
+	 * @return	boolean
+	 */
 	public static function onParserLimitReport( $parser, &$report ) {
 		// add performed loops to limit report:
 		$report .= 'ExtLoops count: ' . self::getLoopsCount( $parser );
