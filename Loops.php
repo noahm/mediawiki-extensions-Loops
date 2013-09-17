@@ -57,8 +57,16 @@ unset($_dir);
  * @since 0.4
  * @var array
  */
-$_egLoopsEnabledFunctions = array( 'while', 'dowhile', 'loop', 'forargs', 'fornumargs' );
-if (!isset($egLoopsEnabledFunctions)) {
-	$egLoopsEnabledFunctions = $_egLoopsEnabledFunctions;
+if (!isset($egLoopsEnabledFunctions) or !is_array($egLoopsEnabledFunctions)) {
+	$egLoopsEnabledFunctions = array( 'while', 'dowhile', 'loop', 'forargs', 'fornumargs' );
 }
-unset($_egLoopsEnabledFunctions);
+
+/**
+ * Configuration variable defining maximum allowed number of loops ('-1' => no limit).
+ * '#forargs' and '#fornumargs' are not limited by this.
+ *
+ * @var int
+ */
+if (!isset($egLoopsMax)) {
+	$egLoopsMax = 100;
+}
