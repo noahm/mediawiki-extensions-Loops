@@ -76,7 +76,7 @@ class ExtLoops {
 			return;
 		}
 		
-		$functionCallback = array( __CLASS__, 'pfObj_' . $name );
+		$functionCallback = array( __CLASS__, 'parse' . ucfirst($name) );
 		$parser->setFunctionHook( $name, $functionCallback, SFH_OBJECT_ARGS );
 	}
 	
@@ -85,18 +85,106 @@ class ExtLoops {
 	# Parser Functions #
 	####################
 
-	public static function pfObj_while( Parser &$parser, $frame, $args ) {
-		return self::perform_while( $parser, $frame, $args, false );
+	/**
+	 * #while condition | code
+	 * condition is checked each loop BEFORE running code
+	 */
+	public static function parseWhile( Parser &$parser, $frame, $args ) {
+		return self::performWhile( $parser, $frame, $args, false );
 	}
 	
-	public static function pfObj_dowhile( Parser &$parser, $frame, $args ) {
-		return self::perform_while( $parser, $frame, $args, true );
+	/**
+	 * #dowhile condition | code
+	 * condition is checked each loop AFTER running code
+	 */
+	public static function parseDowhile( Parser &$parser, $frame, $args ) {
+		return self::performWhile( $parser, $frame, $args, true );
+	}
+	
+	/**
+	 * #loop keyVarName | valVarName | numLoops | code
+	 */
+	public static function parseLoop( Parser &$parser, PPFrame $frame, $args ) {
+		// #loop: var | start | count | code
+		$varName  = isset( $args[0] ) ?      trim( $frame->expand( $args[0] ) ) : '';
+		$startVal = isset( $args[1] ) ? (int)trim( $frame->expand( $args[1] ) ) : 0;
+		$loops    = isset( $args[2] ) ? (int)trim( $frame->expand( $args[2] ) ) : 0;
+		$rawCode  = isset( $args[3] ) ? $args[3] : ''; // unexpanded loop code
+		
+		if( $loops === 0 ) {
+			// no loops to perform
+			return '';
+		}
+		
+		$output = '';
+		$endVal = $startVal + $loops;
+		$i = $startVal;
+		
+		while( $i !== $endVal ) {
+			// limit check:
+			if( ! self::incrCounter( $parser ) ) {
+				return self::msgLoopsLimit( $output );
+			}
+			
+			// set current position as variable:
+			self::setVariable( $parser, $varName, (string)$i );
+			
+			$output .= trim( $frame->expand( $rawCode ) );
+			
+			// in-/decrease loop count (count can be negative):
+			( $i < $endVal ) ? $i++ : $i--;
+		}
+		return $output;
+	}
+	
+	/**
+	 * #forargs: filter | keyVarName | valVarName | code
+	 */
+	public static function parseForargs( Parser &$parser, $frame, $args ) {
+		// The first arg is already expanded, but this is a good habit to have...
+		$filter = array_shift( $args );
+		$filter = $filter !== null ? trim( $frame->expand( $filter ) ) : '';
+		
+		// if prefix contains numbers only or isn't set, get all arguments, otherwise just non-numeric
+		$tArgs = ( preg_match( '/^([1-9][0-9]*)?$/', $filter ) > 0 )
+				? $frame->getArguments()
+				: $frame->getNamedArguments();
+		
+		return self::performForargs( $parser, $frame, $args, $tArgs, $filter );
+	}
+	
+	/**
+	 * #fornumargs: keyVarName | valVarName | code
+	 * or (since 0.4 for more consistency)
+	 * #fornumargs: | keyVarName | valVarName | code
+	 */
+	public static function parseFornumargs( Parser &$parser, $frame, $args ) {
+		/*
+		 * get numeric arguments, don't use PPFrame::getNumberedArguments because it would
+		 * return explicitely numbered arguments only.
+		 */
+		$tNumArgs = $frame->getArguments();
+		foreach( $tNumArgs as $argKey => $argVal ) {
+			// allow all numeric, including negative values!
+			if( is_string( $argKey ) ) {
+				unset( $tNumArgs[ $argKey ] );
+			}
+		}
+		ksort( $tNumArgs ); // sort from lowest to highest
+		
+		if( count( $args ) > 3 ) {
+			// compatbility to pre 0.4 but consistency with other Loop functions.
+			// this way the first argument can be ommitted like '#fornumargs: |varKey |varVal |code'
+			array_shift( $args );
+		}
+		
+		return self::performForargs( $parser, $frame, $args, $tNumArgs, '' );
 	}
 	
 	/**
 	 * Generic function handling '#while' and '#dowhile' as one
 	 */
-	protected static function perform_while( Parser &$parser, $frame, $args, $dowhile = false ) {
+	protected static function performWhile( Parser &$parser, $frame, $args, $dowhile = false ) {
 		// #(do)while: | condition | code
 		$rawCond = isset( $args[1] ) ? $args[1] : ''; // unexpanded condition
 		$rawCode = isset( $args[2] ) ? $args[2] : ''; // unexpanded loop code
@@ -123,87 +211,10 @@ class ExtLoops {
 		return $output;
 	}
 	
-	public static function pfObj_loop( Parser &$parser, PPFrame $frame, $args ) {
-		// #loop: var | start | count | code
-		$varName  = isset( $args[0] ) ?      trim( $frame->expand( $args[0] ) ) : '';
-		$startVal = isset( $args[1] ) ? (int)trim( $frame->expand( $args[1] ) ) : 0;
-		$loops    = isset( $args[2] ) ? (int)trim( $frame->expand( $args[2] ) ) : 0;
-		$rawCode  = isset( $args[3] ) ? $args[3] : ''; // unexpanded loop code
-		
-		if( $loops === 0 ) {
-			// no loops to perform
-			return '';
-		}
-				
-		$output = '';
-		$endVal = $startVal + $loops;
-		$i = $startVal;
-		
-		while( $i !== $endVal ) {
-			// limit check:
-			if( ! self::incrCounter( $parser ) ) {
-				return self::msgLoopsLimit( $output );
-			}
-			
-			// set current position as variable:
-			self::setVariable( $parser, $varName, (string)$i );
-			
-			$output .= trim( $frame->expand( $rawCode ) );
-			
-			// in-/decrease loop count (count can be negative):
-			( $i < $endVal ) ? $i++ : $i--;
-		}
-		return $output;
-	}
-	
-	/**
-	 * #forargs: filter | keyVarName | valVarName | code
-	 */
-	public static function pfObj_forargs( Parser &$parser, $frame, $args ) {		
-		// The first arg is already expanded, but this is a good habit to have...
-		$filter = array_shift( $args );
-		$filter = $filter !== null ? trim( $frame->expand( $filter ) ) : '';
-		
-		// if prefix contains numbers only or isn't set, get all arguments, otherwise just non-numeric
-		$tArgs = ( preg_match( '/^([1-9][0-9]*)?$/', $filter ) > 0 )
-				? $frame->getArguments()
-				: $frame->getNamedArguments();
-		
-		return self::perform_forargs( $parser, $frame, $args, $tArgs, $filter );
-	}
-	
-	/**
-	 * #fornumargs: keyVarName | valVarName | code
-	 * or (since 0.4 for more consistency)
-	 * #fornumargs: | keyVarName | valVarName | code
-	 */
-	public static function pfObj_fornumargs( Parser &$parser, $frame, $args ) {
-		/*
-		 * get numeric arguments, don't use PPFrame::getNumberedArguments because it would
-		 * return explicitely numbered arguments only.
-		 */
-		$tNumArgs = $frame->getArguments();
-		foreach( $tNumArgs as $argKey => $argVal ) {
-			// allow all numeric, including negative values!
-			if( is_string( $argKey ) ) {
-				unset( $tNumArgs[ $argKey ] );
-			}
-		}
-		ksort( $tNumArgs ); // sort from lowest to highest
-		
-		if( count( $args ) > 3 ) {
-			// compatbility to pre 0.4 but consistency with other Loop functions.
-			// this way the first argument can be ommitted like '#fornumargs: |varKey |varVal |code'
-			array_shift( $args );
-		}
-		
-		return self::perform_forargs( $parser, $frame, $args, $tNumArgs, '' );
-	}
-	
 	/**
 	 * Generic function handling '#forargs' and '#fornumargs' as one
 	 */
-	protected static function perform_forargs( Parser &$parser, PPFrame $frame, array $funcArgs, array $templateArgs, $prefix = '' ) {
+	protected static function performForargs( Parser &$parser, PPFrame $frame, array $funcArgs, array $templateArgs, $prefix = '' ) {
 		// if not called within template instance:
 		if( !( $frame->isTemplate() ) ) {
 			return '';
@@ -218,7 +229,7 @@ class ExtLoops {
 		// unexpanded code:
 		$rawCode = array_shift( $funcArgs );
 		$rawCode = $rawCode !== null ? $rawCode : '';
-				
+		
 		$output = '';
 		
 		// if prefix contains numbers only or isn't set, get all arguments, otherwise just non-numeric
@@ -227,7 +238,7 @@ class ExtLoops {
 		
 		foreach( $templateArgs as $argName => $argVal ) {
 			// if no filter or prefix in argument name:
-			if( $prefix !== '' && strpos( $argName, $prefix ) !== 0 ) {		
+			if( $prefix !== '' && strpos( $argName, $prefix ) !== 0 ) {
 				continue;
 			}
 			if ( $keyVar !== $valVar ) {
@@ -238,7 +249,7 @@ class ExtLoops {
 			self::setVariable( $parser, $valVar, $argVal );
 
 			// expand current run:
-			$output .= trim( $frame->expand( $rawCode ) );			
+			$output .= trim( $frame->expand( $rawCode ) );
 		}
 		
 		return $output;

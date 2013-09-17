@@ -4,7 +4,8 @@ The 'Loops' extension Enhances the parser with parser functions to perform loops
 It is not compatible with MediaWiki versions below 1.12.
 
 * Website: http://www.mediawiki.org/wiki/Extension:Loops
-* Authors: David M. Sledge, Daniel Werner < danweetz@web.de >, Noah Manneschmidt < nmanneschmidt@curse.com >
+* Authors: David M. Sledge, Daniel Werner < danweetz@web.de >,
+           Noah Manneschmidt < nmanneschmidt@curse.com >
 * License: GNU GPL v2 or higher
 
 
