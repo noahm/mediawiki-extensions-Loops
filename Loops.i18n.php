@@ -28,6 +28,14 @@ $messages['qqq'] = array(
 	'loops_max' => 'Used as error message.',
 );
 
+/** Asturian (asturianu)
+ * @author Xuacu
+ */
+$messages['ast'] = array(
+	'loops-desc' => "Funciones d'analís pa facer xeres cícliques",
+	'loops_max' => "Algamóse'l númberu máximu de ciclos",
+);
+
 /** Belarusian (Taraškievica orthography) (беларуская (тарашкевіца)‎)
  * @author Wizardist
  */
@@ -58,6 +66,14 @@ $messages['dsb'] = array(
 $messages['es'] = array(
 	'loops-desc' => 'Funciones de analizador (parser) para realizar bucles',
 	'loops_max' => 'Se ha realizado el número máximo de bucles',
+);
+
+/** Persian (فارسی)
+ * @author Armin1392
+ */
+$messages['fa'] = array(
+	'loops-desc' => 'توابع تجزیه کننده برای انجام حلقه‌ها',
+	'loops_max' => 'حداکثر تعداد حلقه‌هایی که انجام شده‌است',
 );
 
 /** French (français)
@@ -134,9 +150,10 @@ $messages['ksh'] = array(
 
 /** Luxembourgish (Lëtzebuergesch)
  * @author Robby
+ * @author Soued031
  */
 $messages['lb'] = array(
-	'loops-desc' => 'Parser-Fonctioune fir Schleefen auszeféieren',
+	'loops-desc' => 'Parser-Funktioune fir Schleefen auszeféieren',
 	'loops_max' => 'Déi maximal Zuel vun erlaabte Schleefe gouf ausgefouert',
 );
 
@@ -210,6 +227,14 @@ $messages['pt-br'] = array(
 $messages['roa-tara'] = array(
 	'loops-desc' => 'Funziune analizzatrice pe fà le cicle',
 	'loops_max' => 'Massime numere de cicle onne state fatte',
+);
+
+/** Russian (русский)
+ * @author Okras
+ */
+$messages['ru'] = array(
+	'loops-desc' => 'Функции анализатора для выполнения циклов',
+	'loops_max' => 'Максимальное количество циклов для выполнения',
 );
 
 /** Tagalog (Tagalog)
